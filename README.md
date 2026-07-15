@@ -54,7 +54,32 @@ client/                 Vite + React
     checkout/            checkout draft context + Stripe/simulated payment
     pages/               Home, Listings, ListingDetail, Checkout, Confirmation
 server/
-  index.js               Express routes (/api/*)
+  app.js                 Express app + routes (/api/*), exported as a handler
+  index.js               local dev entry — imports app.js and listens on :3001
   way.js                 Way API client (holds credentials, server-side only)
   mock.js                in-memory mock of the Way API for demo mode
+api/
+  [...path].js           Vercel serverless entry — mounts server/app.js
+vercel.json              build client → static, route /api/* to the function
 ```
+
+## Deploy to Vercel
+
+The Express app is exported from `server/app.js` and mounted as a single
+serverless function (`api/[...path].js`); `vercel.json` builds the Vite client
+to static output and lets Vercel route `/api/*` to the function.
+
+1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new). The
+   settings in `vercel.json` are picked up automatically — no framework preset
+   needed.
+2. Add environment variables in **Project → Settings → Environment Variables**
+   (never commit them):
+   - `WAY_BRAND_ID`
+   - `WAY_SECRET_KEY`
+   - `STRIPE_PUBLISHABLE_KEY` — the key matching the brand's `paymentPlatform`
+   - `WAY_API` *(optional; defaults to staging `https://api.staging.letsway.com`)*
+3. Deploy. The client calls same-origin `/api/*`, which hits the function.
+
+Note: **mock mode is not reliable on Vercel** — its in-memory store doesn't
+persist across serverless invocations. Set the `WAY_*` credentials so the
+deployment runs in live mode.
